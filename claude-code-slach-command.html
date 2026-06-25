@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Code Slash Command</title>
+  <style>
+    *, *::before, *::after { padding: 0; margin: 0; box-sizing: border-box; }
+    :root {
+      --primary: #D97757;
+      --success: #788C5D;
+      --danger: #B04A4A;
+      --warning: #C78E3F;
+      --info: #5C7CA3;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 100%;
+      line-height: 1.75;
+      color: #1a1a2e;
+      background: #FAF9F5;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* Header */
+    header {
+      padding: 3rem 0 2rem;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin: 0 0 1rem;
+    }
+    header .lead-quote {
+      border-left: 4px solid var(--primary);
+      margin: 1rem 0 0;
+      padding: 0.75rem 1rem;
+      background: #F0EEE6;
+      color: #334155;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.98rem;
+    }
+    header .unit-badge {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.25em 0.75em;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+    .quick-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .quick-list a {
+      display: inline-block;
+      background: #F0EEE6;
+      border: 1px solid #D1CFC5;
+      border-radius: 6px;
+      padding: 0.2em 0.75em;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.85rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .quick-list a:hover {
+      background: #e8e4da;
+      text-decoration: none;
+    }
+
+    /* TOC */
+    nav#toc {
+      background: #F0EEE6;
+      border: 1px solid #D1CFC5;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    nav#toc h2.toc-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      margin: 0 0 0.75rem;
+      border-bottom: none;
+      display: block;
+      padding-bottom: 0;
+      background: transparent;
+      position: static;
+    }
+    nav#toc ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      columns: 2;
+      column-gap: 2rem;
+    }
+    nav#toc li { margin: 0.3rem 0; break-inside: avoid; }
+    nav#toc a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 0.93rem;
+    }
+    nav#toc a:hover { text-decoration: underline; }
+    @media (max-width: 600px) {
+      nav#toc ul { columns: 1; }
+    }
+
+    /* Sections */
+    section {
+      background: white;
+      border: 1.5px solid #ddd;
+      border-radius: 12px;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 2rem;
+    }
+
+    /* Headings */
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+      padding: 0.5rem 0;
+      border-bottom: 2px solid var(--primary);
+      display: inline-block;
+      position: sticky;
+      top: 0;
+      background-color: white;
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #334155;
+      margin: 0.5rem 0 0.25rem;
+    }
+    h4 { font-size: 1rem; font-weight: 600; color: #475569; margin: 0.25rem 0; }
+
+    /* Command blocks */
+    .cmd-block {
+      border-left: 3px solid var(--primary);
+      padding: 0.75rem 1rem;
+      background: #FAF9F5;
+      border-radius: 0 8px 8px 0;
+    }
+    .cmd-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .cmd-name {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary);
+      background: #FDEEE8;
+      border: 1px solid #f0c4b0;
+      padding: 0.15em 0.6em;
+      border-radius: 5px;
+    }
+
+    /* Prose */
+    p { margin: 0; }
+    a { color: var(--info); }
+    a:hover { text-decoration: underline; }
+    strong { font-weight: 600; }
+    ul, ol { padding-left: 1.5rem; margin: 0; }
+    li { margin: 0.2rem 0; }
+
+    blockquote {
+      border-left: 4px solid var(--primary);
+      margin: 0;
+      padding: 0.6rem 1rem;
+      background: #FAF9F5;
+      color: #334155;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.95rem;
+    }
+
+    hr { border: none; border-top: 1px solid #e2e8f0; margin: 0.5rem 0; }
+
+    /* Code */
+    code {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.875em;
+      background: #E3DACC;
+      border: 1px solid #00000033;
+      border-radius: 4px;
+      color: black;
+      padding: 0.15em 0.4em;
+    }
+    pre {
+      background: #F0EEE6;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin: 0;
+    }
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.875rem;
+      line-height: 1.65;
+    }
+
+    /* Tip box */
+    .tip {
+      background: #EEF6E8;
+      border: 1px solid #B8D9A2;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.93rem;
+      color: #2D4A1E;
+    }
+    .tip strong { color: #3D6B28; }
+
+    /* Warning box */
+    .warn {
+      background: #FFF8E6;
+      border: 1px solid #F0C060;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.93rem;
+      color: #5A3E00;
+    }
+
+    /* Images */
+    img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      body { font-size: 15px; }
+      header h1 { font-size: 1.35rem; }
+      .container { padding: 1rem 1rem 3rem; }
+      h2 { font-size: 1.2rem; }
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      body { background: #16161e; color: #e2e8f0; }
+      header { border-bottom-color: #2d2d3d; }
+      section { background: #1e1e2e; border-color: #2d2d3d; }
+      h2 { color: #f1f5f9; background-color: #1e1e2e; }
+      h3 { color: #cbd5e1; }
+      nav#toc { background: #1e1e2e; border-color: #2d2d3d; }
+      blockquote { background: #16161e; }
+      code { background: #2a2a3e; border-color: #3d3d5c; color: #e2e8f0; }
+      pre { background: #1a1a2e; }
+      td { border-bottom-color: #2d2d3d; }
+      th { background: #252535; }
+      tr:nth-child(even) td { background: #1a1a2e; }
+      .tip { background: #1a2e14; border-color: #3d6b28; color: #a8d898; }
+      .warn { background: #2e2000; border-color: #8a6000; color: #f0c060; }
+      header .lead-quote { background: #1e1e2e; color: #94a3b8; }
+      .cmd-block { background: #16161e; }
+      .cmd-name { background: #2a1a14; border-color: #5a2f1e; }
+      .quick-list a { background: #1e1e2e; border-color: #2d2d3d; }
+    }
+    .back-to-top {
+      width: 40px;
+      height: 40px;
+      background-color: white;
+      border-radius: 100%;
+      position: fixed;
+      right: 5%;
+      bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <div class="unit-badge">Claude Code</div>
+      <h1>Slash Command 完整指南</h1>
+      <p class="lead-quote">掌握這些斜線命令，讓你的 Claude Code 工作流程更快、更省錢、更聰明。</p>
+      <div class="quick-list">
+        <a href="#hui-hua-guan-li">/init</a>
+        <a href="#hui-hua-guan-li">/rename</a>
+        <a href="#hui-hua-guan-li">/resume</a>
+        <a href="#mo-xing-he-mo-shi-kong-zhi">/model</a>
+        <a href="#hui-hua-guan-li">/clear</a>
+        <a href="#config">/plugin</a>
+        <a href="#config">/skill</a>
+        <a href="#mo-xing-he-mo-shi-kong-zhi">/loop</a>
+        <a href="#hui-hua-guan-li">/compact</a>
+        <a href="#mo-xing-he-mo-shi-kong-zhi">/plan</a>
+        <a href="#mo-xing-he-mo-shi-kong-zhi">/goal</a>
+      </div>
+    </header>
+
+    <nav id="toc">
+      <h2 class="toc-title">目錄</h2>
+      <ul>
+        <li><a href="#hui-hua-guan-li">一、會話管理</a></li>
+        <li><a href="#zi-xun-yu-zhen-duan">二、資訊與診斷</a></li>
+        <li><a href="#mo-xing-he-mo-shi-kong-zhi">三、模型和模式控制</a></li>
+        <li><a href="#config">四、Config</a></li>
+        <li><a href="#cheng-shi-ma-shen-cha">五、程式碼審查</a></li>
+        <li><a href="#qi-ta-jie-shao">其他介紹</a></li>
+      </ul>
+    </nav>
+
+    <main>
+
+      <!-- 一、會話管理 -->
+      <section id="hui-hua-guan-li">
+        <h2>一、會話管理</h2>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/clear</span>
+          </div>
+          <p>清空當前對話，開始一個全新的會話。</p>
+          <p>當你做完一個任務，要切到下一個任務時，用 <code>/clear</code> 可以把之前的上下文全部清掉，避免舊資訊干擾新任務。</p>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/rename</span>
+          </div>
+          <p>在 <code>/clear</code> 前，可以先為這次的對話 rename 成一個自己好識別的名字，單純給人類識別用，沒其他特殊功能。</p>
+          <p>如果不用 rename，你就需要記得對話的 section ID，But，誰會記得呀，還是乖乖用 <code>/rename</code>。</p>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/compact</span>
+          </div>
+          <p>壓縮當前對話，釋放上下文空間。</p>
+          <p>所有的 Model 都有 Context window（上下文窗口）的數量限制，聊著聊著就滿了。一旦上下文接近上限，通常 70% 左右，AI 的注意力會開始渙散，容易遺漏之前討論過的細節，回答品質明顯下降，就是變笨啦。</p>
+          <p><code>/compact</code> 會把之前的對話濃縮成一份摘要，騰出空間繼續工作，同時保留關鍵資訊不丟失。壓縮後的對話輪次更少了，後續每次請求傳送的 token 也會減少，相當於間接幫你省錢。</p>
+          <div class="warn">
+            雖然 Claude Code 在上下文達到大約 95% 時會自動觸發壓縮，但建議不要等到那時候才處理。自動壓縮的時機不可控，可能正好在你實現關鍵邏輯的時候觸發，導致重要細節被壓縮掉。
+          </div>
+          <div class="tip">
+            <strong>最佳做法：</strong>在每完成一個階段性任務後（比如做好了一個動畫腳本、或是寫完一份規格書），就主動執行一次 <code>/compact</code>。你還可以在後面加指令，告訴它重點保留什麼，例如：<br>
+            <code>/compact 重點保留加薪規則的設計決策</code>
+          </div>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/resume</span>
+          </div>
+          <p>想要接續過去的對話，可以使用 <code>/resume</code> 恢復之前的會話。</p>
+          <p>假如你昨天做到一半的任務今天想接著做，或者剛才 <code>/clear</code> 掉的對話需要回去看看，都可以用 <code>/resume</code> 來恢復。直接輸入後，會彈出一個會話選擇器，列出你最近的所有會話，選一個就能恢復。</p>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/recap</span>
+          </div>
+          <p>生成當前會話的一句話摘要。</p>
+          <p>如果你離開了一會兒回來，忘了剛才做到哪了，<code>/recap</code> 可以快速幫你回憶。其實 Claude Code 本身在你長時間離開後回來也會自動顯示一個 recap，這個命令是讓你隨時主動觸發。</p>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/btw</span>
+          </div>
+          <p><em>btw</em> 就是 <em>by the way</em> 的縮寫，作用是快速插入一個問題，不會污染當前對話上下文。</p>
+          <p>有時候你正在做一個任務，突然想問一個不太相關的小問題，比如：「你的文件資訊是從哪得到的？」如果直接問，這段對話會被加到上下文裡，不僅佔用空間，還可能干擾後續任務。用 <code>/btw</code> 就不會有這個問題，它相當於開了一個臨時小窗，問完就關。</p>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/copy</span>
+          </div>
+          <p>把 Claude 最近一條回覆內容複製到剪貼簿。直接輸入 <code>/copy</code> 就是複製最新的回覆。</p>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/export</span>
+          </div>
+          <p>把當前整個對話匯出為純文字檔。如果你想保存一段對話記錄，或者分享給同事看，可以用這個命令。默認會讓你選擇複製到剪貼簿還是保存到檔案。</p>
+          <pre><code>/export 會議對話記錄.txt</code></pre>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/exit</span>
+          </div>
+          <p>退出 Claude Code 會話。或連按兩次 <code>Ctrl+C</code> 也能退出。</p>
+        </div>
+      </section>
+
+      <!-- 二、資訊與診斷 -->
+      <section id="zi-xun-yu-zhen-duan">
+        <h2>二、資訊與診斷</h2>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/usage</span>
+          </div>
+          <p>查看當前會話的 token 用量和費用。</p>
+          <p>用 Claude Code 最怕的就是不知不覺燒了很多錢。<code>/usage</code> 會告訴你這次會話花了多少 token、換算成多少美元、離你的計畫用量上限還有多遠。建議在長時間工作後定期看一眼。</p>
+          <p>或是你財富自由，就可以不用看。啾咪 ^()^</p>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/context</span>
+          </div>
+          <p>可視化當前的 Context Window 的使用情況，非常重要，在這你可以看到是不是要塞滿了。</p>
+          <p>執行後會顯示一個彩色網格，直觀地告訴你 Context window 被什麼東西佔滿了：是對話記錄太長、還是載入的檔案太多、還是系統提示詞太大。如果快滿了還會給出最佳化建議。</p>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/status</span>
+          </div>
+          <p>打開設定介面的狀態標籤頁，顯示當前的版本號、使用的模型、帳戶資訊和連接狀態。不是那麼的重要，看看就好。</p>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/insights</span>
+          </div>
+          <p>生成一份你使用 Claude Code 的分析報告，包括你經常在哪些項目目錄工作、互動模式是怎樣的、哪些地方產生了問題。</p>
+          <div class="tip">
+            <strong>使用建議：</strong>如果你想回顧自己的 AI 程式設計習慣、找找最佳化空間，可以定期跑一次看看。生成出來的報告默認是英文的，你可以把報告檔案扔給 AI，讓它再幫你分析總結。
+          </div>
+        </div>
+      </section>
+
+      <!-- 三、模型和模式控制 -->
+      <section id="mo-xing-he-mo-shi-kong-zhi">
+        <h2>三、模型和模式控制</h2>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/plan</span>
+          </div>
+          <p>在開發大型專案、或者做大改動之前，不建議直接讓 AI 直接開始寫任何東西。</p>
+          <p>使用 <code>/plan</code> 可以進入規劃模式，會讓 AI 先制定一個執行計畫給你看，確認方案沒問題後，再動手實現。</p>
+          <div class="tip">也可以直接按 <code>Shift + Tab</code> 切換到 plan 模式。</div>
+        </div>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/goal</span>
+            <span style="background:#FDEEE8; color:var(--primary); font-size:0.75rem; font-weight:700; border-radius:999px; padding:0.15em 0.6em; border:1px solid #f0c4b0;">新功能 🔥</span>
+          </div>
+          <p>這是目前 Claude Code 最強大的命令之一。一般情況下，Claude Code 每完成一輪操作，就會停下來等你確認或者下一步指示。</p>
+          <p>但有些任務你其實不需要盯著它一步步做，只需要告訴它「<strong>最終達到什麼狀態就算完成</strong>」，讓它自己埋頭苦幹。特別適合睡覺前丟一個任務給它，第二天早上起來直接驗收成果。</p>
+          <p><code>/goal</code> 命令就是幹這個的。你設定一個完成條件，Claude Code 會自動持續工作，不需要你每一輪都按同意確認。設定了 goal 之後，每輪結束會有一個輕量評估模型檢查條件是否滿足，沒滿足就自動開始下一輪，滿足了才停下來。</p>
+          <pre><code>/goal 掃 source 資料夾下所有的 xlsx 檔，並確保所有的加薪不超過 5%，請用科學方式驗證，例如執行 python 來驗證，不要亂猜</code></pre>
+          <div class="warn">
+            goal 難的不是執行，而是你怎麼讓 AI 驗證是對的，然後才能進行下一步。
+          </div>
+        </div>
+      </section>
+
+      <!-- 四、Config -->
+      <section id="config">
+        <h2>四、Config</h2>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/mcp</span>
+            <span class="cmd-name">/skills</span>
+            <span class="cmd-name">/plugin</span>
+          </div>
+          <p>這三個命令分別用來管理 MCP Server、Skills 與 Plugins。</p>
+          <ul>
+            <li><strong>MCP</strong>：讓 AI 連接外部工具和服務的協議，比如連接 Google 的服務、操作瀏覽器。</li>
+            <li><strong>Skills</strong>：可復用的自訂命令，你可以把常用的工作流封裝成一個 skill，下次更快速規範地完成任務。</li>
+            <li><strong>Plugin</strong>：技能的打包集合，一個外掛裡可以包含多個 skill、自訂主題、hook 等，方便分享和安裝。</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 五、程式碼審查 -->
+      <section id="cheng-shi-ma-shen-cha">
+        <h2>五、程式碼審查</h2>
+
+        <div class="cmd-block">
+          <div class="cmd-title">
+            <span class="cmd-name">/simplify</span>
+          </div>
+          <p>雖然這個命令的名字叫 simplify，但它干的事不只是簡化程式碼。它的核心作用是審查你最近修改的檔案，從三個維度找問題並直接修復：</p>
+          <ul>
+            <li><strong>程式碼復用</strong>：有沒有重複邏輯可以抽取</li>
+            <li><strong>程式碼質量</strong>：有沒有 hack 寫法和冗餘狀態</li>
+            <li><strong>執行效率</strong>：有沒有不必要的計算、可以並行的地方</li>
+          </ul>
+          <p>之所以叫 simplify，大概是因為這三個方向做下來，程式碼確實會變得更簡潔。</p>
+        </div>
+      </section>
+
+      <!-- 其他介紹 -->
+      <section id="qi-ta-jie-shao">
+        <h2>其他介紹</h2>
+        <p>想深入了解更多 Claude Code 的使用技巧，可以參考這篇完整指南：</p>
+        <p>
+          <a href="https://www.blocktempo.com/claude-code-cheat-sheet-complete-guide-shortcuts-agents-mcp-skills/" target="_blank" rel="noopener">
+            Claude Code Cheat Sheet — 完整指南：快捷鍵、Agents、MCP、Skills
+          </a>
+        </p>
+      </section>
+
+    </main>
+    <button class="back-to-top">⬆️</button>
+  </div>
+  <script type="module">
+    document.querySelector('.back-to-top').addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      })
+    });
+  </script>
+</body>
+</html>
